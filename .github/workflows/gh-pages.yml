@@ -8,7 +8,7 @@ on:
     branches: [main]
   schedule:
     # update the site with newest rules once per day
-    - cron:  '15 0 * * *'
+    - cron:  '*/10 * * * *'
 
 jobs:
   build:
