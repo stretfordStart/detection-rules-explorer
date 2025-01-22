@@ -34,6 +34,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
   const filteredIds = ids
     .map((file) => path.parse(file).name) // Extract the rule ID from the filename
     .filter((id) => ruleIdsConfig.specificRuleIds.includes(id)); // Filter by config
+  console.log('Filtered IDs:', filteredIds); // Inside getStaticPaths
 
   return {
     paths: filteredIds.map((id) => ({
@@ -49,6 +50,7 @@ export const getStaticProps: GetStaticProps<{ rule }> = ({ params }) => {
   if (!ruleIdsConfig.specificRuleIds.includes(params.id)) {
     return { notFound: true }; // Return a 404 if the rule ID is not allowed
   }
+  console.log('Requested Rule ID:', params.id); // Inside getStaticProps
 
   // Read the rule details from the filesystem
   const res = JSON.parse(
