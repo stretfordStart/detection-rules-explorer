@@ -287,38 +287,48 @@ async function getPackageRules(
   );
 }
 
+import ruleIdsConfig from './ruleIdsConfig.json';
+
 async function precomputeRuleSummaries() {
   const ruleSummaries: RuleSummary[] = [];
-
   const tagSummaries = new Map<string, TagSummary>();
 
   fs.mkdirSync(RULES_OUTPUT_PATH, { recursive: true });
 
   await getPrebuiltDetectionRules(ruleSummaries, tagSummaries);
 
-  console.log(`loaded ${ruleSummaries.length} rules`);
-  console.log(`example rule:`);
-  console.log(ruleSummaries[0]);
+  // Apply filtering to only include rules specified in ruleIdsConfig
+  const filteredRuleSummaries = ruleSummaries.filter((rule) =>
+    ruleIdsConfig.specificRuleIds.includes(rule.id)
+  );
+
+  console.log(`loaded ${filteredRuleSummaries.length} rules after filtering`);
+  console.log(`example filtered rule:`);
+  console.log(filteredRuleSummaries[0]);
   console.log(`found ${tagSummaries.size} tags`);
   console.log(`example tag:`);
   console.log(tagSummaries.get('Data Source: APM'));
 
-  const newestRules = ruleSummaries.sort(
+  // Sort filtered rules by updated_date
+  const newestRules = filteredRuleSummaries.sort(
     (a, b) => b.updated_date.getTime() - a.updated_date.getTime()
   );
   console.log(
-    `Parsed ${newestRules.length} rules. Newest rule is '${newestRules[0].name}', updated '${newestRules[0].updated_date}'.`
+    `Parsed ${newestRules.length} rules. Newest rule is '${newestRules[0]?.name}', updated '${newestRules[0]?.updated_date}'.`
   );
 
+  // Write filtered and sorted rules to newestRules.json
   fs.writeFileSync('./src/data/newestRules.json', JSON.stringify(newestRules));
 
+  // Calculate and sort tag summaries
   const popularTags = Array.from(tagSummaries.values()).sort(
     (a, b) => b.count - a.count
   );
   console.log(
-    `Parsed ${popularTags.length} tags. Most popular tag is '${popularTags[0].tag_full}' with '${popularTags[0].count}' rules.`
+    `Parsed ${popularTags.length} tags. Most popular tag is '${popularTags[0]?.tag_full}' with '${popularTags[0]?.count}' rules.`
   );
 
+  // Write popular tags to tagSummaries.json
   fs.writeFileSync('./src/data/tagSummaries.json', JSON.stringify(popularTags));
 }
 
