@@ -21,35 +21,46 @@ import * as path from 'path';
 import Wrapper from '../../components/home/wrapper';
 import { ruleDetailsStyles } from '../../components/details/rule_details.styles';
 import { ruleFilterTypeMap } from '../../lib/ruledata';
+import ruleIdsConfig from '../../ruleIdsConfig.json'; // Import the config file
+
 
 const RULES_OUTPUT_PATH = '../../../../src/data/rules/';
 
 export const getStaticPaths: GetStaticPaths = async () => {
+  // Read all available rule IDs from the filesystem
   const ids = fs.readdirSync(path.join(__dirname, RULES_OUTPUT_PATH));
+
+  // Filter to include only the specific rule IDs from the configuration
+  const filteredIds = ids
+    .map((file) => path.parse(file).name) // Extract the rule ID from the filename
+    .filter((id) => ruleIdsConfig.specificRuleIds.includes(id)); // Filter by config
+
   return {
-    paths: ids.map(x => {
-      console.log(path.parse(x).name);
-      return {
-        params: {
-          id: path.parse(x).name,
-        },
-      };
-    }),
-    fallback: false,
+    paths: filteredIds.map((id) => ({
+      params: { id }, // Generate paths only for the filtered IDs
+    })),
+    fallback: false, // No fallback; only specified rules will generate pages
   };
 };
 
-export const getStaticProps: GetStaticProps<{
-  rule;
-}> = ({ params }) => {
+
+export const getStaticProps: GetStaticProps<{ rule }> = ({ params }) => {
+  // Ensure the rule ID exists in the configuration
+  if (!ruleIdsConfig.specificRuleIds.includes(params.id)) {
+    return { notFound: true }; // Return a 404 if the rule ID is not allowed
+  }
+
+  // Read the rule details from the filesystem
   const res = JSON.parse(
     fs.readFileSync(
       path.join(__dirname, `${RULES_OUTPUT_PATH}${params.id}.json`),
       'utf8'
     )
   );
+
   return { props: { rule: res } };
 };
+
 
 export default function RuleDetails({
   rule,
